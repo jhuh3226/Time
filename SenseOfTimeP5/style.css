@@ -1,7 +1,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  /* max-width: 500px; */
+  max-width: 980px;
   margin: auto;
   background: white;
   padding: 10px;
@@ -11,7 +11,7 @@ canvas {
 }
 
 #log{
-  /* max-width: 500px; */
+  max-width: 980px;
   margin: auto;
   text-align: center;
   background: white;
