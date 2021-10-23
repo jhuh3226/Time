@@ -5,6 +5,11 @@ let encoderCharacteristic;   // characteristic that you plan to read:
 let myValue = 0;
 let myBLE;    // instance of p5.ble:
 let connected = false;    // bool checking connectivity
+var userMnRotateVal = 0;  // minute rotation value controlled by user with rotary encoder
+var userHrRotateVal = 0;  // minute rotation value controlled by user with rotary encoder
+
+var resetUserMn = false;  // reset min hand rotation to 0 once user starts guessing
+var resetUserHr = false;
 /*---------------------*/
 
 let bg;
@@ -126,13 +131,14 @@ function gotValue(error, value) {
   // After getting a value, call p5ble.read() again to get the value again
   // myBLE.read(encoderCharacteristic, gotValue);
   myBLE.startNotifications(encoderCharacteristic, handleNotification)
-  logData(data);
+  logData(data);    // value 255 is clockwise, value 1 is counterclockwise
   // You can also pass in the dataType
   // Options: 'unit8', 'uint16', 'uint32', 'int8', 'int16', 'int32', 'float32', 'float64', 'string'
 }
 
 function handleNotification(data) {
-  logData(data)
+  logData(data);
+  drawMnHand(data);
 }
 
 // Using a -90 degree rotation
@@ -142,7 +148,6 @@ function draw() {
   bg.resize(300, 300);
   image(bg, 300, 300);
 
-  // background(bg, 300,300);
   translate(300, 300);
   rotate(-90);
 
@@ -150,13 +155,15 @@ function draw() {
 
   hr = hour();
   mn = minute();
-  let sc = second();
+  // let sc = second();
 
-  // Second angel rotation
+  /* Second angel rotation, which is not in use in this sketch */
+  // let secondAngle = map(sc, 0, 60, 0, 360);
+
+  // Hand setting
   strokeWeight(2);
   stroke(color(0));
   noFill();
-  let secondAngle = map(sc, 0, 60, 0, 360);
 
   // Minute angel rotation
   stroke("Black");
@@ -275,6 +282,59 @@ function draw() {
   if (!guessTime) clockInSleep();
 
   // console.log(guessTime);
+
+  // Drawing seperate clock to test rotary encoder
+  if (guessTime) drawMnHand(0);
+}
+
+// function drawMnHand(data){
+//   push();
+//   userMnRotateVal += data;
+//   console.log("Data coming in drawMnHand", userMnRotateVal);
+//   rotate(userMnRotateVal);
+//   stroke(0, 0, 0);
+//   line(0, 0, 90, 0);
+//   pop();
+// }
+
+function drawHrHand(boolean) {
+  push();
+
+  if (resetUserHr) userHrRotateVal = 0;    // Reset the rotation once it started
+  resetUserHr = false;
+
+  if (data == 255) userHrRotateVal += 6;
+  else if (data == 1) userHrRotateVal -= 6;
+  if (userHrRotateVal < 0) userHrRotateVal = userHrRotateVal + 360;   // if the Value goes <0, make it positive
+  userHrRotateVal = userHrRotateVal % 360;  // Prevent value to go over 360
+  rotate(userHrRotateVal);
+  stroke(0, 0, 0);
+  line(0, 0, 90, 0);
+
+  /*User input hr*/
+  var encoderHr = userHrRotateVal / 6;
+  console.log(encoderHr);
+  pop();
+}
+
+function drawMnHand(data) {
+  push();
+
+  if (resetUserMn) userMnRotateVal = 0;    // Reset the rotation once it started
+  resetUserMn = false;
+
+  if (data == 255) userMnRotateVal += 6;
+  else if (data == 1) userMnRotateVal -= 6;
+  if (userMnRotateVal < 0) userMnRotateVal = userMnRotateVal + 360;   // if the Value goes <0, make it positive
+  userMnRotateVal = userMnRotateVal % 360;  // Prevent value to go over 360
+  rotate(userMnRotateVal);
+  stroke(0, 0, 0);
+  line(0, 0, 90, 0);
+
+  /*User input mn*/
+  var encoderMn = userMnRotateVal / 6;
+  console.log(encoderMn);
+  pop();
 }
 
 function keyTyped() {
@@ -363,6 +423,7 @@ function clockInSleep() {
 // Go to 00:00 on button press
 function clockAwake() {
   guessTime = true;
+  resetUserMn = true;
   console.log("clock Awake");
 }
 
@@ -376,5 +437,5 @@ function logData(data) {
   // const myData = JSON.parse(feed);
   // const myDataGuessedTime = myData.GuessedTime;
   log.innerText = data;
-  console.log(data);
+  // console.log(data);
 }
