@@ -12,7 +12,8 @@ var hrAddValue = 0;
 var resetUserMn = false;  // reset min hand rotation to 0 once user starts guessing
 var resetUserHr = false;
 
-var inputMn, inputHr = 0;
+var inputMn = 0
+var inputHr = 0;
 /*---------------------*/
 
 let bg;
@@ -155,40 +156,35 @@ function draw() {
   rotate(-90);
 
   // Setting the time
-
   hr = hour();
   mn = minute();
   // let sc = second();
 
-  /* Second angel rotation, which is not in use in this sketch */
-  // let secondAngle = map(sc, 0, 60, 0, 360);
-
-  // Hand setting
+  // Overall hand setting
   strokeWeight(2);
   stroke(color(0));
   noFill();
 
-  // Minute angel rotation
-  stroke("Black");
-  minuteAngle = map(mn, 0, 60, 0, 360);
+  /* Second angel rotation, which is not in use in this sketch */
+  // let secondAngle = map(sc, 0, 60, 0, 360);
+
   // Reference link
   // https://p5js.org/reference/#/p5/atan2
-  mouseMinuteAngle = atan2(mouseY - height / 2, mouseX - width / 2) + 90;
-  mapMouseMinuteAngle = map(mouseMinuteAngle, -90, 270, 0, 60) - 15;
-  if (mapMouseMinuteAngle < 0) {
-    mapMouseMinuteAngle = mapMouseMinuteAngle + 60;
-  }
+  // Minute angle
+  // mouseMinuteAngle = atan2(mouseY - height / 2, mouseX - width / 2) + 90;
+  // mapMouseMinuteAngle = map(mouseMinuteAngle, -90, 270, 0, 60) - 15;
+  // if (mapMouseMinuteAngle < 0) {
+  //   mapMouseMinuteAngle = mapMouseMinuteAngle + 60;
+  // }
 
-  // Hour angel rotation
-  stroke("#58B95F");
-  hourAngle = map(hr % 12, 0, 12, 0, 360);
-  mouseHourAngle = atan2(mouseY - height / 2, mouseX - width / 2) + 90;
-  mapMouseHourAngle = map(mouseHourAngle, -90, 270, 0, 12) - 3;
-  if (mapMouseHourAngle < 0) {
-    mapMouseHourAngle = mapMouseHourAngle + 12;
-  }
+  // Hour angle
+  // mouseHourAngle = atan2(mouseY - height / 2, mouseX - width / 2) + 90;
+  // mapMouseHourAngle = map(mouseHourAngle, -90, 270, 0, 12) - 3;
+  // if (mapMouseHourAngle < 0) {
+  //   mapMouseHourAngle = mapMouseHourAngle + 12;
+  // }
 
-  mapMouseHourAngle = int(mapMouseHourAngle);
+  // mapMouseHourAngle = int(mapMouseHourAngle);
 
   /* Guess minute using mouse position */
   /*  push();
@@ -200,47 +196,6 @@ function draw() {
   if (guessTime) line(0, 0, 90, 0);
   pop();
   */
-
-  // Real time
-  push();
-  if (compare) {
-    mAdd = mAdd + 0.5;
-    minuteAlpha = 125 - mAdd;
-    // console.log(mAdd);
-    stroke(0, 0, 0, minuteAlpha);
-
-    if (mAdd > 124) {
-      compare = !compare;
-    }
-
-    // Show how well the person did
-    // && hrDifference == 0
-    if (mnDifference <= 10) {
-      inputText = "You have a sense of time";
-      console.log("good job");
-      console.log(mnDifference + hrDifference);
-    } else {
-      inputText = "Think what you did";
-      console.log("try harder");
-      console.log(mnDifference + hrDifference);
-    }
-  } else {
-    stroke(0, 0, 0, 0);
-  }
-  rotate(minuteAngle);
-  line(0, 0, 90, 0);
-  pop();
-
-  push();
-  if (compare) {
-    rotate(90);
-    textSize(16);
-    fill(0, minuteAlpha);
-    noStroke();
-    textAlign(CENTER, CENTER);
-    text(inputText, 0, 200);
-  }
-  pop();
 
   /* Guess Hour using mouse position */
   /*
@@ -254,23 +209,26 @@ function draw() {
   pop();
   */
 
-  // Real time
-  push();
+  // Show will time
   if (compare) {
-    hAdd = hAdd + 0.5;
-    hourAlpha = 125 - hAdd;
-    // console.log(hAdd);
-    stroke(88, 185, 95, hourAlpha);
-  } else {
-    stroke(88, 185, 95, 0);
+    showRealTime();
   }
-  rotate(hourAngle);
-  line(0, 0, 60, 0);
-  pop();
 
   // Center point
   stroke(0);
   ellipse(0, 0, 5, 5);
+
+  /* Guess feedback in text */
+  push();
+  if (compare) {
+    rotate(90);
+    textSize(16);
+    fill(0, minuteAlpha);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    text(inputText, 0, 200);
+  }
+  pop();
 
   // console.log("mn: " + mn + ", mouse mn:" + lastMn);
   // console.log("hr: " + hr + ", mouse hr:" + lastHr);
@@ -289,6 +247,42 @@ function draw() {
   }
 }
 
+function showRealTime() {
+  // Minute angel rotation
+  stroke("Black");
+  minuteAngle = map(mn, 0, 60, 0, 360);
+
+  // Hour angel rotation
+  stroke("#58B95F");
+  hourAngle = map(hr % 12, 0, 12, 0, 360);
+
+  /* Minute hand */
+  push();
+  mAdd = mAdd + 0.5;
+  minuteAlpha = 125 - mAdd;
+  // console.log(mAdd);
+  stroke(0, 0, 0, minuteAlpha);
+
+  if (mAdd > 124) {
+    compare = !compare;
+  }
+  rotate(minuteAngle);
+  line(0, 0, 90, 0);
+  pop();
+  /*-----------*/
+
+  /* Hour hand */
+  push();
+  hAdd = hAdd + 0.5;
+  hourAlpha = 125 - hAdd;
+  // console.log(hAdd);
+  stroke(88, 185, 95, hourAlpha);
+
+  rotate(hourAngle);
+  line(0, 0, 60, 0);
+  pop();
+}
+
 function drawMnHand(data) {
   push();
 
@@ -302,7 +296,7 @@ function drawMnHand(data) {
   if (data == 255) rawUserMnRotateVal += 6;
   else if (data == 1) rawUserMnRotateVal -= 6;
   if (rawUserMnRotateVal < 0) rawUserMnRotateVal = rawUserMnRotateVal + 4320;   // if the Value goes <0, make it positive
-  console.log(rawUserMnRotateVal);
+  // console.log(rawUserMnRotateVal);
 
   // if (data == 255) {
   //   if (userMnRotateVal == 360) {
@@ -318,7 +312,7 @@ function drawMnHand(data) {
   //     drawHrHand(1);
   //   }
   // }
-  
+
   userMnRotateVal = userMnRotateVal % 360;  // Prevent value to go over 360
   rotate(userMnRotateVal);
   stroke(0, 0, 0);
@@ -353,10 +347,10 @@ function drawHrHand(boolean) {
   if (resetUserHr) rawUserMnRotateVal = 0;    // Reset the rotation once it started
   resetUserHr = false;
 
-  hrAddValue = map(rawUserMnRotateVal, 0, 4320, 0, 12);   // Mapping the min to hr
-  console.log(hrAddValue);
-  rotate(hrAddValue*30);
-  inputHr = Math.trunc(hrAddValue);
+  inputHr = map(rawUserMnRotateVal, 0, 4320, 0, 12);   // Mapping the min to hr
+  // console.log(hrAddValue);
+  rotate(inputHr * 30);
+  inputHr = Math.trunc(inputHr);
   stroke(88, 185, 95);
   line(0, 0, 60, 0);
   pop();
@@ -391,36 +385,51 @@ function keyReleased() {
 
 function compareTime() {
   console.log("compare time");
-  // var d = dist(mouseX, mouseY, width / 2, height / 2);
-  // if (d < 5) {
-  //   console.log("intersect");
-
   compare = true;
-  mAdd = 0;
-  hAdd = 0;
 
-  let realTimeToMins = lastHr * 60 + int(lastMn);
-  let setTimeToMins = hr * 60 + mn;
-  totalDifference = abs(realTimeToMins - setTimeToMins);
+  if (hr >= 12) hr = hr - 12;
+
+  console.log(`Real: ${hr}:${mn}, Guessed: ${inputHr}:${inputMn}`);
+
+  let realTimeToMins = hr * 60 + int(mn);
+  let inputTimeToMins = inputHr * 60 + inputMn;
+
+  totalDifference = abs(realTimeToMins - inputTimeToMins);
 
   console.log(totalDifference);
 
-  mnDifference = abs(int(lastMn - mn));
-  hrDifference = abs(int(lastHr - hr));
+  // Show how well the person did
+  if (totalDifference <= 15) {
+    inputText = "You have a sense of time";
+    // console.log("good job");
+    // console.log(mnDifference + hrDifference);
+  } else {
+    inputText = "Think what you did";
+    // console.log("try harder");
+    // console.log(mnDifference + hrDifference);
+  }
+
+  // Required to make real time fade away
+  mAdd = 0;
+  hAdd = 0;
+
+  setTimeout(makeGuessTimeFalse, 4000);   // Give feedback for 4 seconds
 
   /* Log data */
-  feed = {
-    RealTime: hr + ":" + mn,
-    GuessedTime: lastHr + ":" + Math.floor(lastMn),
-  };
+  // feed = {
+  //   RealTime: hr + ":" + mn,
+  //   GuessedTime: lastHr + ":" + Math.floor(lastMn),
+  // };
 
-  data.push(feed);
-  // const myData = JSON.parse(feed);
-  // const myDataGuessedTime = myData.GuessedTime;
-  // log.innerText = myDataGuessedTime;
-  console.log(data);
+  // data.push(feed);
+  // // const myData = JSON.parse(feed);
+  // // const myDataGuessedTime = myData.GuessedTime;
+  // // log.innerText = myDataGuessedTime;
+  // console.log(data);
   /*-----------*/
+}
 
+function makeGuessTimeFalse() {
   guessTime = false;
 }
 
