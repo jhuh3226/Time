@@ -6,10 +6,13 @@ let myValue = 0;
 let myBLE;    // instance of p5.ble:
 let connected = false;    // bool checking connectivity
 var userMnRotateVal = 0;  // minute rotation value controlled by user with rotary encoder
+var rawUserMnRotateVal = 0;
 var userHrRotateVal = 0;  // minute rotation value controlled by user with rotary encoder
-
+var hrAddValue = 0;
 var resetUserMn = false;  // reset min hand rotation to 0 once user starts guessing
 var resetUserHr = false;
+
+var inputMn, inputHr = 0;
 /*---------------------*/
 
 let bg;
@@ -187,15 +190,8 @@ function draw() {
 
   mapMouseHourAngle = int(mapMouseHourAngle);
 
-  // Inside second line movement
-  // push();
-  // rotate(secondAngle);
-  // stroke(0);
-  // line(0, 0, 100, 0);
-  // pop();
-
-  // Inside minute line movement -------------------------------------------
-  push();
+  /* Guess minute using mouse position */
+  /*  push();
   if (modifyMinuteAngle) {
     changedMinuteAngle = mouseMinuteAngle;
   }
@@ -203,6 +199,7 @@ function draw() {
   stroke(0, 0, 0);
   if (guessTime) line(0, 0, 90, 0);
   pop();
+  */
 
   // Real time
   push();
@@ -245,7 +242,8 @@ function draw() {
   }
   pop();
 
-  // Inside hour line movement ---------------------------------------------
+  /* Guess Hour using mouse position */
+  /*
   push();
   if (modifyHourAngle) {
     changedHourAngle = mouseHourAngle;
@@ -254,6 +252,7 @@ function draw() {
   stroke(88, 185, 95);
   if (guessTime) line(0, 0, 60, 0);
   pop();
+  */
 
   // Real time
   push();
@@ -284,37 +283,10 @@ function draw() {
   // console.log(guessTime);
 
   // Drawing seperate clock to test rotary encoder
-  if (guessTime) drawMnHand(0);
-}
-
-// function drawMnHand(data){
-//   push();
-//   userMnRotateVal += data;
-//   console.log("Data coming in drawMnHand", userMnRotateVal);
-//   rotate(userMnRotateVal);
-//   stroke(0, 0, 0);
-//   line(0, 0, 90, 0);
-//   pop();
-// }
-
-function drawHrHand(boolean) {
-  push();
-
-  if (resetUserHr) userHrRotateVal = 0;    // Reset the rotation once it started
-  resetUserHr = false;
-
-  if (data == 255) userHrRotateVal += 6;
-  else if (data == 1) userHrRotateVal -= 6;
-  if (userHrRotateVal < 0) userHrRotateVal = userHrRotateVal + 360;   // if the Value goes <0, make it positive
-  userHrRotateVal = userHrRotateVal % 360;  // Prevent value to go over 360
-  rotate(userHrRotateVal);
-  stroke(0, 0, 0);
-  line(0, 0, 90, 0);
-
-  /*User input hr*/
-  var encoderHr = userHrRotateVal / 6;
-  console.log(encoderHr);
-  pop();
+  if (guessTime) {
+    drawMnHand(0);
+    drawHrHand(0);
+  }
 }
 
 function drawMnHand(data) {
@@ -326,14 +298,67 @@ function drawMnHand(data) {
   if (data == 255) userMnRotateVal += 6;
   else if (data == 1) userMnRotateVal -= 6;
   if (userMnRotateVal < 0) userMnRotateVal = userMnRotateVal + 360;   // if the Value goes <0, make it positive
+
+  if (data == 255) rawUserMnRotateVal += 6;
+  else if (data == 1) rawUserMnRotateVal -= 6;
+  if (rawUserMnRotateVal < 0) rawUserMnRotateVal = rawUserMnRotateVal + 4320;   // if the Value goes <0, make it positive
+  console.log(rawUserMnRotateVal);
+
+  // if (data == 255) {
+  //   if (userMnRotateVal == 360) {
+  //     console.log("Hour +1");
+  //     drawHrHand(255);
+  //   }
+  // }
+
+  // // If it was 255 before, and just became 1, ~~~~~
+  // else if (data == 1) {
+  //   if (userMnRotateVal == 360) {
+  //     console.log("Hour -1");
+  //     drawHrHand(1);
+  //   }
+  // }
+  
   userMnRotateVal = userMnRotateVal % 360;  // Prevent value to go over 360
   rotate(userMnRotateVal);
   stroke(0, 0, 0);
   line(0, 0, 90, 0);
 
   /*User input mn*/
-  var encoderMn = userMnRotateVal / 6;
-  console.log(encoderMn);
+  inputMn = userMnRotateVal / 6;
+  // console.log(inputMn);
+  pop();
+}
+
+// function drawHrHand(boolean) {
+//   push();
+//   if (boolean == 255) {
+//     hrAddValue += 30;
+//     // boolean = false;
+//   } else if (boolean == 1) {
+//     console.log("Clock going back");
+//     // hrAddValue = 0 
+//   }
+//   rotate((userMnRotateVal / 12) + hrAddValue);
+
+//   inputHr = Math.trunc(((userMnRotateVal / 12) + hrAddValue) / 30);
+//   // console.log(inputHr);
+//   stroke(88, 185, 95);
+//   line(0, 0, 60, 0);
+//   pop();
+// }
+
+function drawHrHand(boolean) {
+  push();
+  if (resetUserHr) rawUserMnRotateVal = 0;    // Reset the rotation once it started
+  resetUserHr = false;
+
+  hrAddValue = map(rawUserMnRotateVal, 0, 4320, 0, 12);   // Mapping the min to hr
+  console.log(hrAddValue);
+  rotate(hrAddValue*30);
+  inputHr = Math.trunc(hrAddValue);
+  stroke(88, 185, 95);
+  line(0, 0, 60, 0);
   pop();
 }
 
@@ -424,6 +449,7 @@ function clockInSleep() {
 function clockAwake() {
   guessTime = true;
   resetUserMn = true;
+  resetUserHr = true;
   console.log("clock Awake");
 }
 
@@ -433,9 +459,10 @@ function logData(data) {
   //     GuessedTime: lastHr + ":" + Math.floor(lastMn),
   //   };
 
-  //   data.push(feed);
+  // data.push(feed);
   // const myData = JSON.parse(feed);
   // const myDataGuessedTime = myData.GuessedTime;
-  log.innerText = data;
+  // log.innerText = data;
+  log.innerText = `Guessed Time: ${inputHr}:${inputMn}`;
   // console.log(data);
 }
