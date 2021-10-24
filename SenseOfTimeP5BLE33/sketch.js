@@ -52,8 +52,9 @@ let inputText;
 
 let lastHr, lastMn;
 
-var data = []; // Data in JSON
+var jsonStr = '{"record":[]}';
 var feed = null;
+let time = document.getElementById("time");
 let log = document.getElementById("log");
 
 function setup(event) {
@@ -135,13 +136,13 @@ function gotValue(error, value) {
   // After getting a value, call p5ble.read() again to get the value again
   // myBLE.read(encoderCharacteristic, gotValue);
   myBLE.startNotifications(encoderCharacteristic, handleNotification)
-  logData(data);    // value 255 is clockwise, value 1 is counterclockwise
+  // logData(data);    // value 255 is clockwise, value 1 is counterclockwise
   // You can also pass in the dataType
   // Options: 'unit8', 'uint16', 'uint32', 'int8', 'int16', 'int32', 'float32', 'float64', 'string'
 }
 
 function handleNotification(data) {
-  logData(data);
+  showData(data);
   drawMnHand(data);
 }
 
@@ -413,6 +414,8 @@ function compareTime() {
   mAdd = 0;
   hAdd = 0;
 
+  logData();
+
   setTimeout(makeGuessTimeFalse, 4000);   // Give feedback for 4 seconds
 
   /* Log data */
@@ -462,16 +465,23 @@ function clockAwake() {
   console.log("clock Awake");
 }
 
-function logData(data) {
-  //   feed = {
-  //     RealTime: hr + ":" + mn,
-  //     GuessedTime: lastHr + ":" + Math.floor(lastMn),
-  //   };
+function showData(data) {
+  time.innerText = `Guessed Time: ${inputHr}:${inputMn}`;
 
-  // data.push(feed);
-  // const myData = JSON.parse(feed);
-  // const myDataGuessedTime = myData.GuessedTime;
-  // log.innerText = data;
-  log.innerText = `Guessed Time: ${inputHr}:${inputMn}`;
-  // console.log(data);
+}
+
+function logData() {
+  feed = {
+    "RealTime": hr + ":" + mn,
+    "GuessedTime": inputHr + ":" + inputMn
+  };
+
+  // var jsonStr = '{"record":[]}';
+  var obj = JSON.parse(jsonStr);
+  obj['record'].push(feed);
+  jsonStr = JSON.stringify(obj);
+  console.log(jsonStr);
+  // console.log(jsonStr.record);
+
+  log.innerText = jsonStr.record;
 }
