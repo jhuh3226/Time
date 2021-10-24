@@ -20,14 +20,15 @@ canvas {
   justify-content: center;
 }
 
-#time {
+#guide {
   max-width: 980px;
   margin: auto;
   text-align: center;
   background: white;
   padding: 10px;
 }
-#instruction {
+
+#report {
   max-width: 980px;
   margin: auto;
   text-align: center;

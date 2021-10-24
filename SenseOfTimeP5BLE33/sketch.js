@@ -1,7 +1,9 @@
 /*------- BLE ---------*/
 const serviceUuid = "19b10010-e8f2-537e-4f6c-d104768a1214";
 const encoderUuid = "19b10012-e8f2-537e-4f6c-d104768a1214";
+const buttonUuid = "19b10014-e8f2-537e-4f6c-d104768a1214";
 let encoderCharacteristic;   // characteristic that you plan to read:
+let buttonCharacteristic;   // characteristic that you plan to read:
 let myValue = 0;
 let myBLE;    // instance of p5.ble:
 let connected = false;    // bool checking connectivity
@@ -14,6 +16,7 @@ var resetUserHr = false;
 
 var inputMn = 0
 var inputHr = 0;
+var inputBtnState = 0;
 /*---------------------*/
 
 let bg;
@@ -54,14 +57,15 @@ let lastHr, lastMn;
 
 var jsonStr = '{"record":[]}';
 var feed = null;
-let time = document.getElementById("time");
+let time = document.getElementById("guide");
+let report = document.getElementById("report");
 let log = document.getElementById("log");
 
 function setup(event) {
   console.log('page is loaded');
 
   myBLE = new p5ble();      // Create a p5ble instance:
-  const connectButton = document.getElementById('button');
+  const connectButton = document.getElementById('connectBtn');
   connectButton.addEventListener('click', connectToBle);
   connectButton.value.innerHTML = "connected";
 
@@ -84,11 +88,11 @@ function setup(event) {
   mnKeyPressed = false;
   hrKeyPressed = true;
 
-  guessTimeBtn = createButton("clickToGuess");
-  guessTimeBtn.mousePressed(clockAwake);
+  // guessTimeBtn = createButton("clickToGuess");
+  // guessTimeBtn.mousePressed(clockAwake);
 
-  submitTimeBtn = createButton("clickToSubmit");
-  submitTimeBtn.mousePressed(compareTime);
+  // submitTimeBtn = createButton("clickToSubmit");
+  // submitTimeBtn.mousePressed(compareTime);
   // submitTimeBtn.mousePressed(logData);
 }
 
@@ -103,7 +107,7 @@ function gotCharacteristics(error, characteristics) {
     console.log('error', error);
     return;
   }
-  console.log(characteristics);
+  // console.log(characteristics);
 }
 
 // when connected to BLE, read characteristics
@@ -115,14 +119,21 @@ function readCharacteristics(error, characteristics) {
 
   connected = true;   // sending bool for writing 
   encoderCharacteristic = characteristics[0];    // writing
+  buttonCharacteristic = characteristics[1];    // writing
+  console.log(characteristics);
 
   for (c of characteristics) {
 
     if (c.uuid == encoderUuid) {
-      console.log("Trying to call gotValue")
+      console.log("Trying to call handleNotificationEncoder")
       encoderCharacteristic = c;
-      myBLE.read(encoderCharacteristic, gotValue);
-      // myBLE.startNotifications(encoderCharacteristic, handleNotification);    //float32 does not work somehow
+      myBLE.startNotifications(encoderCharacteristic, handleNotificationEncoder);
+    }
+
+    if (c.uuid == buttonUuid) {
+      console.log("Trying to call handleNotificationBtn")
+      buttonCharacteristic = c;
+      myBLE.startNotifications(buttonCharacteristic, handleNotificationBtn);
     }
   }
 }
@@ -135,15 +146,35 @@ function gotValue(error, value) {
   myValue = value;
   // After getting a value, call p5ble.read() again to get the value again
   // myBLE.read(encoderCharacteristic, gotValue);
-  myBLE.startNotifications(encoderCharacteristic, handleNotification)
+  myBLE.startNotifications(encoderCharacteristic, handleNotificationEncoder)
   // logData(data);    // value 255 is clockwise, value 1 is counterclockwise
   // You can also pass in the dataType
   // Options: 'unit8', 'uint16', 'uint32', 'int8', 'int16', 'int32', 'float32', 'float64', 'string'
 }
 
-function handleNotification(data) {
+function handleNotificationEncoder(data) {
+  // console.log("handleNotificationEncoder");
   showData(data);
   drawMnHand(data);
+
+  if (inputBtnState == 0 || inputBtnState == 2) {
+    console.log("User rotating before start guessing");
+    time.innerText = "Press button to guess";
+  } else {
+    time.innerText = "What time is it?";
+  }
+}
+
+function handleNotificationBtn(data) {
+  // console.log("handleNotificationBtn");
+  inputBtnState = data;
+  showData(data);
+
+  if (data == 1) {
+    clockAwake();
+  } else if (data == 2) {
+    compareTime();
+  }
 }
 
 // Using a -90 degree rotation
@@ -222,12 +253,13 @@ function draw() {
   /* Guess feedback in text */
   push();
   if (compare) {
-    rotate(90);
-    textSize(16);
-    fill(0, minuteAlpha);
-    noStroke();
-    textAlign(CENTER, CENTER);
-    text(inputText, 0, 200);
+    reportUser();
+    // rotate(90);
+    // textSize(16);
+    // fill(0, minuteAlpha);
+    // noStroke();
+    // textAlign(CENTER, CENTER);
+    // text(inputText, 0, 200);
   }
   pop();
 
@@ -357,33 +389,6 @@ function drawHrHand(boolean) {
   pop();
 }
 
-function keyTyped() {
-  if (key === "m") {
-    console.log("m pressed");
-    modifyMinuteAngle = true;
-    mnKeyPressed = true;
-    hrKeyPressed = false;
-  } else if (key === "h") {
-    console.log("h pressed");
-    modifyHourAngle = true;
-    hrKeyPressed = true;
-    mnKeyPressed = false;
-  }
-}
-
-function keyReleased() {
-  if (hrKeyPressed) lastHr = mapMouseHourAngle;
-  else if (mnKeyPressed) lastMn = mapMouseMinuteAngle;
-
-  mnKeyPressed = false;
-  hrKeyPressed = false;
-
-  // console.log("hr: " + lastHr + ", mn:" + lastMn);
-
-  modifyMinuteAngle = false;
-  modifyHourAngle = false;
-}
-
 function compareTime() {
   console.log("compare time");
   compare = true;
@@ -398,17 +403,6 @@ function compareTime() {
   totalDifference = abs(realTimeToMins - inputTimeToMins);
 
   console.log(totalDifference);
-
-  // Show how well the person did
-  if (totalDifference <= 15) {
-    inputText = "You have a sense of time";
-    // console.log("good job");
-    // console.log(mnDifference + hrDifference);
-  } else {
-    inputText = "Think what you did";
-    // console.log("try harder");
-    // console.log(mnDifference + hrDifference);
-  }
 
   // Required to make real time fade away
   mAdd = 0;
@@ -466,8 +460,15 @@ function clockAwake() {
 }
 
 function showData(data) {
-  time.innerText = `Guessed Time: ${inputHr}:${inputMn}`;
+  // time.innerText = `Guessed Time: ${inputHr}:${inputMn}, Button State: ${inputBtnState}`;
+}
 
+function reportUser() {
+  if (totalDifference <= 15) {
+    report.innerHTML = "You have a sense of time";
+  } else {
+    report.innerHTML = "Think what you did";
+  }
 }
 
 function logData() {
