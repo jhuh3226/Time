@@ -6,12 +6,13 @@ body {
   margin: auto;
   background: white;
   padding: 10px;
-  font-family: "Times New Roman", Times, serif;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 canvas {
   display: block;
   position: absolute;
+  top: 15%;
   left: 50%;
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
@@ -20,20 +21,49 @@ canvas {
   justify-content: center;
 }
 
-#guide {
+#connectBtn {
   max-width: 980px;
+  margin: auto;
+  border:none;
+  background:none;
+  color: aliceblue;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#guide {
+  /* max-width: 980px;
   margin: auto;
   text-align: center;
   background: white;
+  padding: 10px; */
+
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
+  max-width: 980px;
+  text-align: center;
   padding: 10px;
+  z-index: 999;
 }
 
 #report {
+  position: absolute;
+  top: 80%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
   max-width: 980px;
-  margin: auto;
   text-align: center;
-  background: white;
   padding: 10px;
+  z-index: 999;
 }
 
 /* #btn1 {

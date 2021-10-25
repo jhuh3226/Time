@@ -14,6 +14,13 @@ var hrAddValue = 0;
 var resetUserMn = false;  // reset min hand rotation to 0 once user starts guessing
 var resetUserHr = false;
 
+var rotating = false;
+var rotatingCounter = 0;
+
+// var used when reporting how well they guessed the time
+var hourToTrack = 0;
+var minuteToTrack = 0;
+
 var inputMn = 0
 var inputHr = 0;
 var inputBtnState = 0;
@@ -57,9 +64,9 @@ let lastHr, lastMn;
 
 var jsonStr = '{"record":[]}';
 var feed = null;
-let time = document.getElementById("guide");
+let guide = document.getElementById("guide");
 let report = document.getElementById("report");
-let log = document.getElementById("log");
+// let log = document.getElementById("log");
 
 function setup(event) {
   console.log('page is loaded');
@@ -71,7 +78,7 @@ function setup(event) {
 
   createCanvas(600, 600);
   angleMode(DEGREES);
-  bg = loadImage("assets/clock3.png");
+  bg = loadImage("assets/clock5.png");
   modifyMinuteAngle = false;
   modifyHourAngle = false;
   compare = false;
@@ -87,13 +94,6 @@ function setup(event) {
 
   mnKeyPressed = false;
   hrKeyPressed = true;
-
-  // guessTimeBtn = createButton("clickToGuess");
-  // guessTimeBtn.mousePressed(clockAwake);
-
-  // submitTimeBtn = createButton("clickToSubmit");
-  // submitTimeBtn.mousePressed(compareTime);
-  // submitTimeBtn.mousePressed(logData);
 }
 
 /*------- BLE ---------*/
@@ -158,10 +158,11 @@ function handleNotificationEncoder(data) {
   drawMnHand(data);
 
   if (inputBtnState == 0 || inputBtnState == 2) {
+    // Show this for only few seconds
+    rotating = true;
+    rotatingCounter = 0;
     console.log("User rotating before start guessing");
-    time.innerText = "Press button to guess";
-  } else {
-    time.innerText = "What time is it?";
+    // guide.innerHTML = "Press button to guess";
   }
 }
 
@@ -171,7 +172,9 @@ function handleNotificationBtn(data) {
   showData(data);
 
   if (data == 1) {
-    clockAwake();
+    if (!compare) clockAwake();
+    // if user pressed button when the hands are still fading away, write the inputBtnState as 2 to arduino
+    // else if(compare) 
   } else if (data == 2) {
     compareTime();
   }
@@ -190,65 +193,18 @@ function draw() {
   // Setting the time
   hr = hour();
   mn = minute();
-  // let sc = second();
 
   // Overall hand setting
   strokeWeight(2);
   stroke(color(0));
   noFill();
 
-  /* Second angel rotation, which is not in use in this sketch */
-  // let secondAngle = map(sc, 0, 60, 0, 360);
-
-  // Reference link
-  // https://p5js.org/reference/#/p5/atan2
-  // Minute angle
-  // mouseMinuteAngle = atan2(mouseY - height / 2, mouseX - width / 2) + 90;
-  // mapMouseMinuteAngle = map(mouseMinuteAngle, -90, 270, 0, 60) - 15;
-  // if (mapMouseMinuteAngle < 0) {
-  //   mapMouseMinuteAngle = mapMouseMinuteAngle + 60;
-  // }
-
-  // Hour angle
-  // mouseHourAngle = atan2(mouseY - height / 2, mouseX - width / 2) + 90;
-  // mapMouseHourAngle = map(mouseHourAngle, -90, 270, 0, 12) - 3;
-  // if (mapMouseHourAngle < 0) {
-  //   mapMouseHourAngle = mapMouseHourAngle + 12;
-  // }
-
-  // mapMouseHourAngle = int(mapMouseHourAngle);
-
-  /* Guess minute using mouse position */
-  /*  push();
-  if (modifyMinuteAngle) {
-    changedMinuteAngle = mouseMinuteAngle;
-  }
-  rotate(changedMinuteAngle);
-  stroke(0, 0, 0);
-  if (guessTime) line(0, 0, 90, 0);
-  pop();
-  */
-
-  /* Guess Hour using mouse position */
-  /*
-  push();
-  if (modifyHourAngle) {
-    changedHourAngle = mouseHourAngle;
-  }
-  rotate(changedHourAngle);
-  stroke(88, 185, 95);
-  if (guessTime) line(0, 0, 60, 0);
-  pop();
-  */
+  // Reference: https://p5js.org/reference/#/p5/atan2
 
   // Show will time
   if (compare) {
     showRealTime();
   }
-
-  // Center point
-  stroke(0);
-  ellipse(0, 0, 5, 5);
 
   /* Guess feedback in text */
   push();
@@ -278,6 +234,14 @@ function draw() {
     drawMnHand(0);
     drawHrHand(0);
   }
+
+  // Center point
+  stroke(0);
+  ellipse(0, 0, 5, 5);
+
+  reportUser();
+
+  console.log(`InputBtnState: ${inputBtnState}, Compare: ${compare}`);
 }
 
 function showRealTime() {
@@ -296,9 +260,6 @@ function showRealTime() {
   // console.log(mAdd);
   stroke(0, 0, 0, minuteAlpha);
 
-  if (mAdd > 124) {
-    compare = !compare;
-  }
   rotate(minuteAngle);
   line(0, 0, 90, 0);
   pop();
@@ -314,6 +275,11 @@ function showRealTime() {
   rotate(hourAngle);
   line(0, 0, 60, 0);
   pop();
+
+  // Only after few seconds, make it default
+  if (mAdd > 83) {
+    compare = !compare;
+  }
 }
 
 function drawMnHand(data) {
@@ -397,8 +363,10 @@ function compareTime() {
 
   console.log(`Real: ${hr}:${mn}, Guessed: ${inputHr}:${inputMn}`);
 
-  let realTimeToMins = hr * 60 + int(mn);
-  let inputTimeToMins = inputHr * 60 + inputMn;
+  let realTimeToMins = (hr * 60) + int(mn);
+  // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
+  // There is the problem when time becomes 0:0, it has to calculate PM and AM to solve the problem 
+  let inputTimeToMins = (inputHr * 60) + inputMn;
 
   totalDifference = abs(realTimeToMins - inputTimeToMins);
 
@@ -410,7 +378,7 @@ function compareTime() {
 
   logData();
 
-  setTimeout(makeGuessTimeFalse, 4000);   // Give feedback for 4 seconds
+  setTimeout(makeGuessTimeFalse, 3500);   // Give feedback for 4 seconds
 
   /* Log data */
   // feed = {
@@ -464,17 +432,45 @@ function showData(data) {
 }
 
 function reportUser() {
-  if (totalDifference <= 15) {
-    report.innerHTML = "You have a sense of time";
-  } else {
-    report.innerHTML = "Think what you did";
+  // When it is comparing time
+  if (compare) {
+    if (totalDifference <= 15) {
+      guide.innerHTML = "You have a sense of time" + "<br />" + totalDifference + " minutes difference is totally fine";
+      // report.innerHTML = "You have a sense of time";
+      // console.log("totalDifference" + totalDifference);
+    } else {
+      hourToTrack = Math.trunc(totalDifference / 60)
+      minuteToTrack = totalDifference % 60;
+      
+      // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
+      // have to devide this more. Whether user went a head, or not
+      guide.innerHTML = "Think. Look back" + "<br />" + "You lost track of " + hourToTrack + " hours and " + minuteToTrack + " minutes";
+      // report.innerHTML = "Think what you did";
+      // console.log("totalDifference" + totalDifference);
+    }
+  }
+  // When it is not comparing time
+  else {
+    if (inputBtnState == 2 || inputBtnState == 0) {
+      if (!rotating) guide.innerHTML = "What's the time?" + "<br />" + "Make a guess"
+      else {
+        guide.innerHTML = "Press button to guess";
+        rotatingCounter += 1;
+        if (rotatingCounter > 50) {
+          rotating = false;
+        }
+      }
+    } else if (inputBtnState == 1) {
+      guide.innerHTML = "Tic track, tic track"
+    }
   }
 }
 
 function logData() {
   feed = {
     "RealTime": hr + ":" + mn,
-    "GuessedTime": inputHr + ":" + inputMn
+    "GuessedTime": inputHr + ":" + inputMn,
+    "TimeToTrack": totalDifference
   };
 
   // var jsonStr = '{"record":[]}';
@@ -484,5 +480,5 @@ function logData() {
   console.log(jsonStr);
   // console.log(jsonStr.record);
 
-  log.innerText = jsonStr.record;
+  report.innerText = jsonStr;
 }
