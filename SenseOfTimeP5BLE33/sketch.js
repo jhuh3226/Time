@@ -63,6 +63,7 @@ let inputText;
 let lastHr, lastMn;
 
 var jsonStr = '{"record":[]}';
+var obj = null;
 var feed = null;
 let guide = document.getElementById("guide");
 let report = document.getElementById("report");
@@ -75,6 +76,9 @@ function setup(event) {
   const connectButton = document.getElementById('connectBtn');
   connectButton.addEventListener('click', connectToBle);
   connectButton.value.innerHTML = "connected";
+
+  const saveButton = document.getElementById('saveBtn');
+  saveButton.addEventListener('click', saveDataToFile);
 
   createCanvas(600, 600);
   angleMode(DEGREES);
@@ -195,7 +199,8 @@ function draw() {
   mn = minute();
 
   // Overall hand setting
-  strokeWeight(2);
+  strokeWeight(3);
+  strokeCap(ROUND);
   stroke(color(0));
   noFill();
 
@@ -241,7 +246,7 @@ function draw() {
 
   reportUser();
 
-  console.log(`InputBtnState: ${inputBtnState}, Compare: ${compare}`);
+  // console.log(`InputBtnState: ${inputBtnState}, Compare: ${compare}`);
 }
 
 function showRealTime() {
@@ -250,8 +255,11 @@ function showRealTime() {
   minuteAngle = map(mn, 0, 60, 0, 360);
 
   // Hour angel rotation
+  strokeWeight(2);
   stroke("#58B95F");
   hourAngle = map(hr % 12, 0, 12, 0, 360);
+  // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
+  // hourAngle = map((((hr%12)*60)), 0, 4320, 0, 360);
 
   /* Minute hand */
   push();
@@ -315,6 +323,7 @@ function drawMnHand(data) {
   userMnRotateVal = userMnRotateVal % 360;  // Prevent value to go over 360
   rotate(userMnRotateVal);
   stroke(0, 0, 0);
+  strokeWeight(3);
   line(0, 0, 90, 0);
 
   /*User input mn*/
@@ -322,24 +331,6 @@ function drawMnHand(data) {
   // console.log(inputMn);
   pop();
 }
-
-// function drawHrHand(boolean) {
-//   push();
-//   if (boolean == 255) {
-//     hrAddValue += 30;
-//     // boolean = false;
-//   } else if (boolean == 1) {
-//     console.log("Clock going back");
-//     // hrAddValue = 0 
-//   }
-//   rotate((userMnRotateVal / 12) + hrAddValue);
-
-//   inputHr = Math.trunc(((userMnRotateVal / 12) + hrAddValue) / 30);
-//   // console.log(inputHr);
-//   stroke(88, 185, 95);
-//   line(0, 0, 60, 0);
-//   pop();
-// }
 
 function drawHrHand(boolean) {
   push();
@@ -351,6 +342,7 @@ function drawHrHand(boolean) {
   rotate(inputHr * 30);
   inputHr = Math.trunc(inputHr);
   stroke(88, 185, 95);
+  strokeWeight(3);
   line(0, 0, 60, 0);
   pop();
 }
@@ -441,7 +433,7 @@ function reportUser() {
     } else {
       hourToTrack = Math.trunc(totalDifference / 60)
       minuteToTrack = totalDifference % 60;
-      
+
       // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
       // have to devide this more. Whether user went a head, or not
       guide.innerHTML = "Think. Look back" + "<br />" + "You lost track of " + hourToTrack + " hours and " + minuteToTrack + " minutes";
@@ -468,17 +460,29 @@ function reportUser() {
 
 function logData() {
   feed = {
-    "RealTime": hr + ":" + mn,
-    "GuessedTime": inputHr + ":" + inputMn,
-    "TimeToTrack": totalDifference
+    "RealHr": hr,
+    "RealMn": mn,
+    "GuessedHr": inputHr,
+    "GuessedMn": inputMn,
+    "MinuteToTrack": totalDifference
   };
 
-  // var jsonStr = '{"record":[]}';
-  var obj = JSON.parse(jsonStr);
+  obj = JSON.parse(jsonStr);
   obj['record'].push(feed);
   jsonStr = JSON.stringify(obj);
   console.log(jsonStr);
-  // console.log(jsonStr.record);
+  console.log(obj["record"][0].GuessedHr);
 
-  report.innerText = jsonStr;
+  report.innerText = obj["record"][0].GuessedHr;
+}
+
+function saveDataToFile(){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], {
+    type: "text/plain"
+  }));
+  a.setAttribute("download", "data.txt");
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }

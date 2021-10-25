@@ -21,7 +21,15 @@ canvas {
   justify-content: center;
 }
 
-#connectBtn {
+#connectBtn{
+  max-width: 980px;
+  margin: auto;
+  border:none;
+  background:none;
+  color: aliceblue;
+  font-family: 'Courier New', Courier, monospace;
+}
+#saveBtn {
   max-width: 980px;
   margin: auto;
   border:none;
