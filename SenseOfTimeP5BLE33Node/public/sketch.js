@@ -24,6 +24,7 @@ var minuteToTrack = 0;
 var inputMn = 0
 var inputHr = 0;
 var inputBtnState = 0;
+var guessNumberTracker = -1;
 /*---------------------*/
 
 let bg;
@@ -459,6 +460,7 @@ function reportUser() {
 }
 
 function logData() {
+  guessNumberTracker += 1;
   feed = {
     "RealHr": hr,
     "RealMn": mn,
@@ -473,10 +475,25 @@ function logData() {
   console.log(jsonStr);
   console.log(obj["record"][0].GuessedHr);
 
-  report.innerText = obj["record"][0].GuessedHr;
+  console.log("JSON array length: " + obj["record"].length);
+
+  // for (let i = 0; i < obj["record"].length; i++) {
+  //   // var newDiv = document.createElement('div');
+  //   report.innerText = `A person guessed time at ${obj["record"][i].RealHr}:${obj["record"][i].RealMn} and lost track of ${obj["record"][i].MinuteToTrack} minutes`;
+  //   // report.append(`A person guessed time at ${obj["record"][i].RealHr}:${obj["record"][i].RealMn} and lost track of ${obj["record"][i].MinuteToTrack} minutes`);
+  //   // report.innetText = newDiv;
+  //   // report.append(`A person guessed time at ${obj["record"][i].RealHr}:${obj["record"][i].RealMn} and lost track of ${obj["record"][i].MinuteToTrack} minutes`);
+  //   // report.append(newDiv);
+  // }
+  // report.append(`A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} and lost track of ${obj["record"][guessNumberTracker].MinuteToTrack} minutes`);
+
+
+  var newDiv = document.createElement('div');
+  newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} and lost track of ${obj["record"][guessNumberTracker].MinuteToTrack} minutes`;
+  report.appendChild(newDiv);
 }
 
-function saveDataToFile(){
+function saveDataToFile() {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], {
     type: "text/plain"

@@ -76,7 +76,7 @@ function postData(request, response) {
 }
 
 // start the server:
-server.listen(process.env.PORT || 80, serverStart);
+server.listen(process.env.PORT || 3000, serverStart);
 // API endpoint listeners:
 server.get("/:uid/records/:startTime/:endTime/", getData);
 server.post("/data", postData);
