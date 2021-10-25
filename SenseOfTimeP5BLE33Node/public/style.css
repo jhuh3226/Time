@@ -1,0 +1,88 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /*   max-width: 980px; */
+  margin: auto;
+  background: white;
+  padding: 10px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+canvas {
+  display: block;
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
+}
+
+#connectBtn{
+  max-width: 980px;
+  margin: auto;
+  border:none;
+  background:none;
+  color: aliceblue;
+  font-family: 'Courier New', Courier, monospace;
+}
+#saveBtn {
+  max-width: 980px;
+  margin: auto;
+  border:none;
+  background:none;
+  color: aliceblue;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#guide {
+  /* max-width: 980px;
+  margin: auto;
+  text-align: center;
+  background: white;
+  padding: 10px; */
+
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
+  max-width: 980px;
+  text-align: center;
+  padding: 10px;
+  z-index: 999;
+}
+
+#report {
+  position: absolute;
+  top: 80%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
+  max-width: 980px;
+  text-align: center;
+  padding: 10px;
+  z-index: 999;
+}
+
+/* #btn1 {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 16px;
+} 
+*/
