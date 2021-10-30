@@ -2,8 +2,12 @@
 const serviceUuid = "19b10010-e8f2-537e-4f6c-d104768a1214";
 const encoderUuid = "19b10012-e8f2-537e-4f6c-d104768a1214";
 const buttonUuid = "19b10014-e8f2-537e-4f6c-d104768a1214";
+const encoder2Uuid = "19b10016-e8f2-537e-4f6c-d104768a1214";
+const button2Uuid = "19b10018-e8f2-537e-4f6c-d104768a1214";
 let encoderCharacteristic;   // characteristic that you plan to read:
+let encoder2Characteristic;
 let buttonCharacteristic;   // characteristic that you plan to read:
+let button2Characteristic;   // characteristic that you plan to read:
 let myValue = 0;
 let myBLE;    // instance of p5.ble:
 let connected = false;    // bool checking connectivity
@@ -24,10 +28,13 @@ var minuteToTrack = 0;
 var inputMn = 0
 var inputHr = 0;
 var inputBtnState = 0;
+var inputIndivBtnState = 0;
 var guessNumberTracker = -1;
 /*---------------------*/
 
 let bg;
+// let audio = new Audio("url to file");
+// document.getElementById("button id").onclick = audio.play;
 
 let mn;
 let changedMinuteAngle;
@@ -46,6 +53,9 @@ let modifyHourAngle;
 let hourAlpha;
 let hAdd;
 let hrKeyPressed;
+
+// military time to AM or PM
+let nonMilitaryTime = null;
 
 // clock sleep mode
 let sleepHrHand = 0;
@@ -68,6 +78,9 @@ var obj = null;
 var feed = null;
 let guide = document.getElementById("guide");
 let report = document.getElementById("report");
+let historyTitle = document.getElementById("historyTitle");
+let history = document.getElementById("history");
+// let printConsole = document.getElementById("printConsole");
 // let log = document.getElementById("log");
 
 function setup(event) {
@@ -123,22 +136,56 @@ function readCharacteristics(error, characteristics) {
   }
 
   connected = true;   // sending bool for writing 
-  encoderCharacteristic = characteristics[0];    // writing
-  buttonCharacteristic = characteristics[1];    // writing
+  encoderCharacteristic = characteristics[0];    // read, notify
+  buttonCharacteristic = characteristics[1];    // write, notify
+  encoder2Characteristic = characteristics[2];    // read, notify
+  button2Characteristic = characteristics[3];    // read, notify
   console.log(characteristics);
 
   for (c of characteristics) {
 
     if (c.uuid == encoderUuid) {
-      console.log("Trying to call handleNotificationEncoder")
+      console.log("Trying to call handleNotificationEncoder");
+      var newDiv = document.createElement('div');
+      newDiv.innerText = "Encoder in";
+      // printConsole.appendChild(newDiv);
+
+      // document.getElementsByName("body").appendChild("Trying to call handleNotificationEncoder")
       encoderCharacteristic = c;
       myBLE.startNotifications(encoderCharacteristic, handleNotificationEncoder);
     }
 
     if (c.uuid == buttonUuid) {
-      console.log("Trying to call handleNotificationBtn")
+      console.log("Trying to call handleNotificationBtn");
+      var newDiv = document.createElement('div');
+      newDiv.innerText = "Btn in";
+      // printConsole.appendChild(newDiv);
+
+      // document.getElementsByName("body").appendChild("Trying to call handleNotificationBtn")
       buttonCharacteristic = c;
       myBLE.startNotifications(buttonCharacteristic, handleNotificationBtn);
+    }
+
+    if (c.uuid == encoder2Uuid) {
+      console.log("Trying to call handleNotificationEncoder");
+      var newDiv = document.createElement('div');
+      newDiv.innerText = "Encoder2 in";
+      // printConsole.appendChild(newDiv);
+
+      // document.getElementsByName("body").appendChild("Trying to call handleNotificationEncoder")
+      encoder2Characteristic = c;
+      myBLE.startNotifications(encoder2Characteristic, handleNotificationEncoder2);
+    }
+
+    if (c.uuid == button2Uuid) {
+      console.log("Trying to call handleNotificationBtn2");
+      var newDiv = document.createElement('div');
+      newDiv.innerText = " Btn2 in";
+      // printConsole.appendChild(newDiv);
+
+      // document.getElementsByName("body").appendChild("Trying to call handleNotificationBtn")
+      button2Characteristic = c;
+      myBLE.startNotifications(button2Characteristic, handleNotificationBtn2);
     }
   }
 }
@@ -167,6 +214,7 @@ function handleNotificationEncoder(data) {
     rotating = true;
     rotatingCounter = 0;
     console.log("User rotating before start guessing");
+    writeToBleButton(1);
     // guide.innerHTML = "Press button to guess";
   }
 }
@@ -185,11 +233,33 @@ function handleNotificationBtn(data) {
   }
 }
 
+function handleNotificationEncoder2(data) {
+  console.log(data);
+  scrollHistory(data);
+}
+
+function handleNotificationBtn2(data) {
+  inputIndivBtnState = data;
+  showOrHideClock(data);
+
+  if (data == 0) {
+    console.log("Hide data");
+  } else if (data == 1) {
+    console.log("Show data");
+  }
+}
+
+// ************************ write to BLE is somewhat not working
+function writeToBleButton(sendData) {
+  // console.log("writing new button status: " + sendData);
+  // myBLE.write(buttonCharacteristic, sendData);
+}
+
 // Using a -90 degree rotation
 function draw() {
   background(255);
   imageMode(CENTER);
-  bg.resize(300, 300);
+  bg.resize(400, 400);
   image(bg, 300, 300);
 
   translate(300, 300);
@@ -247,6 +317,7 @@ function draw() {
 
   reportUser();
 
+  AMorPM();
   // console.log(`InputBtnState: ${inputBtnState}, Compare: ${compare}`);
 }
 
@@ -348,17 +419,461 @@ function drawHrHand(boolean) {
   pop();
 }
 
+// checks AM or PM
+function AMorPM() {
+  // console.log(nonMilitaryTime);
+  if (hr >= 12 && hr <= 23) {
+    nonMilitaryTime = "PM";
+  } else {
+    nonMilitaryTime = "AM";
+  }
+}
+
 function compareTime() {
   console.log("compare time");
+  // Changing all the values so that it can calculate the time difference correctly
+  // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
+  // There is the problem when time becomes 0:0, it has to calculate PM and AM to solve the problem 
+  if (hr == 0) {
+    hr = 24;
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (hr == 1) {
+      inputHr = 25;
+    } else if (hr == 2) {
+      inputHr = 26;
+    } else if (hr == 3) {
+      inputHr = 27;
+    } else if (hr == 4) {
+      inputHr = 16;
+    } else if (hr == 5) {
+      inputHr = 17;
+    } else if (hr == 6) {
+      inputHr = 18;
+    } else if (hr == 7) {
+      inputHr = 19;
+    } else if (hr == 8) {
+      inputHr = 20;
+    } else if (hr == 9) {
+      inputHr = 21;
+    } else if (hr == 10) {
+      inputHr = 22;
+    } else if (hr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 1) {
+    hr = 25;
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (hr == 1) {
+      inputHr = 25;
+    } else if (hr == 2) {
+      inputHr = 26;
+    } else if (hr == 3) {
+      inputHr = 16;
+    } else if (hr == 4) {
+      inputHr = 16;
+    } else if (hr == 5) {
+      inputHr = 17;
+    } else if (hr == 6) {
+      inputHr = 18;
+    } else if (hr == 7) {
+      inputHr = 19;
+    } else if (hr == 8) {
+      inputHr = 20;
+    } else if (hr == 9) {
+      inputHr = 21;
+    } else if (hr == 10) {
+      inputHr = 22;
+    } else if (hr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 2) {
+    hr = 26;
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (hr == 1) {
+      inputHr = 25;
+    } else if (hr == 2) {
+      inputHr = 26;
+    } else if (hr == 3) {
+      inputHr = 15;
+    } else if (hr == 4) {
+      inputHr = 16;
+    } else if (hr == 5) {
+      inputHr = 17;
+    } else if (hr == 6) {
+      inputHr = 18;
+    } else if (hr == 7) {
+      inputHr = 19;
+    } else if (hr == 8) {
+      inputHr = 20;
+    } else if (hr == 9) {
+      inputHr = 21;
+    } else if (hr == 10) {
+      inputHr = 22;
+    } else if (hr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 7) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    }
+  }
+
+  else if (hr == 8) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    }
+  }
+
+  else if (hr == 9) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    }
+  }
+
+  else if (hr == 10) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    }
+  }
+
+  else if (hr == 11) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    }
+  }
+
+  else if (hr == 12) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    }
+  }
+
+  else if (hr == 13) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    }
+  }
+
+  else if (hr == 14) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    }
+  }
+
+  else if (hr == 15) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    }
+  }
+
+  else if (hr == 16) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    }
+  }
+
+  else if (hr == 17) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    }
+  }
+
+  else if (hr == 18) {
+    if (inputHr == 0) {
+      inputHr = 12;
+    } else if (inputHr == 1) {
+      inputHr = 13;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    } else if (inputHr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 19) {
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (inputHr == 1) {
+      inputHr = 25;
+    } else if (inputHr == 2) {
+      inputHr = 14;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    } else if (inputHr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 20) {
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (inputHr == 1) {
+      inputHr = 25;
+    } else if (inputHr == 2) {
+      inputHr = 26;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    } else if (inputHr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 21) {
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (inputHr == 1) {
+      inputHr = 25;
+    } else if (inputHr == 2) {
+      inputHr = 26;
+    } else if (inputHr == 3) {
+      inputHr = 15;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    } else if (inputHr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 22) {
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (inputHr == 1) {
+      inputHr = 25;
+    } else if (inputHr == 2) {
+      inputHr = 26;
+    } else if (inputHr == 3) {
+      inputHr = 27;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    } else if (inputHr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  else if (hr == 23) {
+    if (inputHr == 0) {
+      inputHr = 24;
+    } else if (inputHr == 1) {
+      inputHr = 25;
+    } else if (inputHr == 2) {
+      inputHr = 26;
+    } else if (inputHr == 3) {
+      inputHr = 27;
+    } else if (inputHr == 4) {
+      inputHr = 16;
+    } else if (inputHr == 5) {
+      inputHr = 17;
+    } else if (inputHr == 6) {
+      inputHr = 18;
+    } else if (inputHr == 7) {
+      inputHr = 19;
+    } else if (inputHr == 8) {
+      inputHr = 20;
+    } else if (inputHr == 9) {
+      inputHr = 21;
+    } else if (inputHr == 10) {
+      inputHr = 22;
+    } else if (inputHr == 11) {
+      inputHr = 23;
+    }
+  }
+
+  console.log(`Current time: ${hr}:${mn}, Gussed: ${inputHr}:${inputMn}`);
+
   compare = true;
 
-  if (hr >= 12) hr = hr - 12;
+  // if (hr >= 12) hr = hr - 12;
 
   console.log(`Real: ${hr}:${mn}, Guessed: ${inputHr}:${inputMn}`);
 
   let realTimeToMins = (hr * 60) + int(mn);
-  // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
-  // There is the problem when time becomes 0:0, it has to calculate PM and AM to solve the problem 
   let inputTimeToMins = (inputHr * 60) + inputMn;
 
   totalDifference = abs(realTimeToMins - inputTimeToMins);
@@ -408,7 +923,7 @@ function clockInSleep() {
   const ctxMn = canvas.getContext("2d");
   sleepMnHand = (sleepMnHand % 360) + 5;
   ctxMn.rotate((sleepMnHand * Math.PI) / 180);
-  line(0, 0, 60, 60);
+  line(0, 0, 70, 70);
   pop();
 }
 
@@ -421,17 +936,17 @@ function clockAwake() {
 }
 
 function showData(data) {
-  // time.innerText = `Guessed Time: ${inputHr}:${inputMn}, Button State: ${inputBtnState}`;
+  // time.innerText = `Guessed Time: ${inputHr}:${inputMn}, Button State: ${inputBtnState}`, Indiv Button State: ${inputBtnState}`;
 }
 
 function reportUser() {
   // When it is comparing time
   if (compare) {
-    if (totalDifference <= 15) {
+    if (totalDifference <= 20) {
       guide.innerHTML = "You have a sense of time" + "<br />" + totalDifference + " minutes difference is totally fine";
       // report.innerHTML = "You have a sense of time";
       // console.log("totalDifference" + totalDifference);
-    } else {
+    } else if (totalDifference > 20 && totalDifference < 270) {
       hourToTrack = Math.trunc(totalDifference / 60)
       minuteToTrack = totalDifference % 60;
 
@@ -440,6 +955,8 @@ function reportUser() {
       guide.innerHTML = "Think. Look back" + "<br />" + "You lost track of " + hourToTrack + " hours and " + minuteToTrack + " minutes";
       // report.innerHTML = "Think what you did";
       // console.log("totalDifference" + totalDifference);
+    } else {
+      guide.innerHTML = "You totally lost track of time." + "<br />" + "Is everything okay?";
     }
   }
   // When it is not comparing time
@@ -489,8 +1006,15 @@ function logData() {
 
 
   var newDiv = document.createElement('div');
-  newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} and lost track of ${obj["record"][guessNumberTracker].MinuteToTrack} minutes`;
+  // Dividing the log in three different catagory
+  // <=20
+  // >20 && <270
+  // >=270
+  if (totalDifference <= 20) newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and had sense of time.`;
+  else if (totalDifference > 20 && totalDifference < 270) newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and lost track of ${obj["record"][guessNumberTracker].MinuteToTrack} minutes.`;
+  else  newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and totally lost track of time.`;
   report.appendChild(newDiv);
+  history.appendChild(newDiv);
 }
 
 function saveDataToFile() {
@@ -502,4 +1026,34 @@ function saveDataToFile() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+// If indivButton is 1, hide guessing elements, show report
+// If it is 0, show guessing elements, hide report
+const showOrHideClock = (data) => {
+  if (data == 1) {
+    // Hide canvas
+    guide.style.display = "none";
+    canvas.style.display = "none";
+    historyTitle.style.display = "block";
+    history.style.display = "block";
+  } else {
+    guide.style.display = "block";
+    canvas.style.display = "block";
+    historyTitle.style.display = "none";
+    history.style.display = "none";
+  }
+}
+
+// document.getElementById("history").onkeyup = function (e) {
+//   var code = e.keyCode;
+//   if (code === 74) {
+//     window.scrollTo(document.getElementById("history").scrollLeft,
+//       document.getElementById("history").scrollTop + 500);
+//   }
+// };
+
+const scrollHistory = (data) => {
+  if (data == 255) document.getElementById("history").scrollBy(0, 10);
+  else if (data == 1) document.getElementById("history").scrollBy(0, -10);
 }

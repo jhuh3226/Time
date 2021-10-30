@@ -55,6 +55,7 @@ canvas {
   justify-content: center;
   max-width: 980px;
   text-align: center;
+  /* font-size:30px; */
   padding: 10px;
   z-index: 999;
 }
@@ -73,6 +74,66 @@ canvas {
   text-align: left;
   padding: 10px;
   z-index: 999;
+}
+
+#historyTitle{
+  position: absolute;
+  display: none;
+  top: 8%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
+  /* make the font bold */
+  font-weight: 700;
+  max-width: 980px;
+  font-size: 16px;
+  /* font-family: 'Courier New Bold', Courier, monospace; */
+  text-align: center;
+  padding: 10px;
+  z-index: 999;
+}
+
+/* .historyContainer {
+  position: relative;
+  max-width: 980px;
+  overflow: hidden;
+  border-color: aqua;
+} */
+
+/* #history {
+  position: absolute;
+  display: none;
+  justify-content: center;
+  max-width: 980px;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  padding: 10px;
+  z-index: 555;
+} */
+
+#history {
+  position: absolute;
+  /* set this to auto to show scroll when it exeeds the set height */
+  height: 500px;
+  overflow-y:auto;
+  display: none;
+  top: 13%;
+  left: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  -ms-transform: translateX(-50%);
+  transform: translateX(-50%);
+  justify-content: center;
+  max-width: 980px;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  padding: 10px;
+  z-index: 555;
 }
 
 /* #btn1 {
