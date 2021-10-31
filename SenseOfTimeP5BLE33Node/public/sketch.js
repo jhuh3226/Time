@@ -948,7 +948,7 @@ function reportUser() {
       // console.log("totalDifference" + totalDifference);
     } else if (totalDifference > 20 && totalDifference < 270) {
       hourToTrack = Math.trunc(totalDifference / 60)
-      minuteToTrack = totalDifference % 60;
+      minuteToTrack = Math.trunc(totalDifference % 60);
 
       // ---!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -- (HAS TO SOLVE)
       // have to devide this more. Whether user went a head, or not
