@@ -438,27 +438,27 @@ function compareTime() {
     hr = 24;
     if (inputHr == 0) {
       inputHr = 24;
-    } else if (hr == 1) {
+    } else if (inputHr == 1) {
       inputHr = 25;
-    } else if (hr == 2) {
+    } else if (inputHr == 2) {
       inputHr = 26;
-    } else if (hr == 3) {
+    } else if (inputHr == 3) {
       inputHr = 27;
-    } else if (hr == 4) {
+    } else if (inputHr == 4) {
       inputHr = 16;
-    } else if (hr == 5) {
+    } else if (inputHr == 5) {
       inputHr = 17;
-    } else if (hr == 6) {
+    } else if (inputHr == 6) {
       inputHr = 18;
-    } else if (hr == 7) {
+    } else if (inputHr == 7) {
       inputHr = 19;
-    } else if (hr == 8) {
+    } else if (inputHr == 8) {
       inputHr = 20;
-    } else if (hr == 9) {
+    } else if (inputHr == 9) {
       inputHr = 21;
-    } else if (hr == 10) {
+    } else if (inputHr == 10) {
       inputHr = 22;
-    } else if (hr == 11) {
+    } else if (inputHr == 11) {
       inputHr = 23;
     }
   }
@@ -978,8 +978,14 @@ function reportUser() {
 
 function logData() {
   guessNumberTracker += 1;
+
+  if (hr >= 24) hr = hr - 24;
+  else if (hr < 24 && hr > 12) hr = hr - 12;
+
+  let logHr = hr;
+
   feed = {
-    "RealHr": hr,
+    "RealHr": logHr,
     "RealMn": mn,
     "GuessedHr": inputHr,
     "GuessedMn": inputMn,
@@ -1012,7 +1018,7 @@ function logData() {
   // >=270
   if (totalDifference <= 20) newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and had sense of time.`;
   else if (totalDifference > 20 && totalDifference < 270) newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and lost track of ${obj["record"][guessNumberTracker].MinuteToTrack} minutes.`;
-  else  newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and totally lost track of time.`;
+  else newDiv.innerText = `A person guessed time at ${obj["record"][guessNumberTracker].RealHr}:${obj["record"][guessNumberTracker].RealMn} ${nonMilitaryTime} and totally lost track of time.`;
   report.appendChild(newDiv);
   history.appendChild(newDiv);
 }
