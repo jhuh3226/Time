@@ -4,6 +4,7 @@ const encoderUuid = "19b10012-e8f2-537e-4f6c-d104768a1214";
 const buttonUuid = "19b10014-e8f2-537e-4f6c-d104768a1214";
 const encoder2Uuid = "19b10016-e8f2-537e-4f6c-d104768a1214";
 const button2Uuid = "19b10018-e8f2-537e-4f6c-d104768a1214";
+// let characteristicsArray = [encoderCharacteristic, buttonCharacteristic, encoder2Characteristic, button2Characteristic];
 let encoderCharacteristic;   // characteristic that you plan to read:
 let encoder2Characteristic;
 let buttonCharacteristic;   // characteristic that you plan to read:
@@ -116,17 +117,47 @@ function setup(event) {
 
 /*------- BLE ---------*/
 function connectToBle() {
-  myBLE.connect(serviceUuid, readCharacteristics);     // Connect to a device by passing the service UUID
+  myBLE.connect(serviceUuid, gotCharacteristics);     // Connect to a device by passing the service UUID
 }
 
+// A function that will be called once got characteristics
 function gotCharacteristics(error, characteristics) {
-  // console.log("got characteristics");
-  if (error) {
-    console.log('error', error);
-    return;
+  if (error) console.log('error: ', error);
+  connected = true; 
+
+  for (c of characteristics) {
+    if (c.uuid == encoderUuid) {
+      encoderCharacteristic = c;
+      myBLE.startNotifications(encoderCharacteristic, handleNotificationEncoder);
+    } else if (c.uuid == buttonUuid) {
+      buttonCharacteristic = c;
+      myBLE.startNotifications(buttonCharacteristic, handleNotificationBtn);
+    } else if (c.uuid == encoder2Uuid) {
+      encoder2Characteristic = c;
+      myBLE.startNotifications(encoder2Characteristic, handleNotificationEncoder2);
+    } else {
+      console.log("nothing");
+      button2Characteristic = c;
+      myBLE.startNotifications(button2Characteristic, handleNotificationBtn2);
+    }
   }
-  // console.log(characteristics);
+  // Start notifications on the first characteristic by passing the characteristic
+  // And a callback function to handle notifications
+
+
+  // You can also pass in the dataType
+  // Options: 'unit8', 'uint16', 'uint32', 'int8', 'int16', 'int32', 'float32', 'float64', 'string'
+  // myBLE.startNotifications(myCharacteristic, handleNotifications, 'string');
 }
+
+// function gotCharacteristics(error, characteristics) {
+//   // console.log("got characteristics");
+//   if (error) {
+//     console.log('error', error);
+//     return;
+//   }
+//   // console.log(characteristics);
+// }
 
 // when connected to BLE, read characteristics
 function readCharacteristics(error, characteristics) {
